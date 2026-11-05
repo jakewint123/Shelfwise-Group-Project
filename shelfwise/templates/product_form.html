@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "_macros.html" import heading %}
+{% block title %}{{ 'Edit product' if product else 'Add a product' }}{% endblock %}
+{% block heading %}{{ heading('Edit product' if product else 'Add a product', 'Change the details of ' ~ product.product_name ~ '.' if product else 'Enter the details for a new stock item.') }}{% endblock %}
+{% block content %}
+<section class="card form-card">
+  <h2>Product information</h2>
+  <p class="minor">Fields marked <span class="required" aria-hidden="true">*</span> are required.</p>
+  <form method="post" class="form-grid" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-row">
+      <div class="field"><label for="sku">SKU <span class="required" aria-hidden="true">*</span></label><input id="sku" name="sku" maxlength="30" required value="{{ form.get('sku', '') }}" placeholder="e.g. LAP-006"></div>
+      <div class="field"><label for="product_name">Product name <span class="required" aria-hidden="true">*</span></label><input id="product_name" name="product_name" maxlength="150" required value="{{ form.get('product_name', '') }}"></div>
+    </div>
+    <div class="form-row">
+      <div class="field"><label for="brand">Brand</label><input id="brand" name="brand" maxlength="60" value="{{ form.get('brand') or '' }}" placeholder="e.g. Dell"></div>
+      <div class="field"><label for="category_id">Category <span class="required" aria-hidden="true">*</span></label>
+        <select id="category_id" name="category_id" required><option value="">Choose category</option>
+          {% for c in categories %}<option value="{{ c.category_id }}" {{ 'selected' if form.get('category_id', '')|string == c.category_id|string }}>{{ c.category_name }}</option>{% endfor %}
+        </select></div>
+    </div>
+    <div class="form-row">
+      <div class="field"><label for="item_condition">Condition <span class="required" aria-hidden="true">*</span></label>
+        <select id="item_condition" name="item_condition" required><option value="">Choose condition</option>
+          {% for c in conditions %}<option {{ 'selected' if form.get('item_condition') == c }}>{{ c }}</option>{% endfor %}
+        </select></div>
+      <div class="field"><label for="warranty_months">Warranty (months)</label><input id="warranty_months" name="warranty_months" type="number" min="0" value="{{ form.get('warranty_months', 0) }}"></div>
+    </div>
+    <div class="form-row three">
+      <div class="field"><label for="cost_price">Cost price (£) <span class="required" aria-hidden="true">*</span></label><input id="cost_price" name="cost_price" type="number" step="0.01" min="0" required value="{{ form.get('cost_price', '') }}"></div>
+      <div class="field"><label for="sell_price">Selling price (£) <span class="required" aria-hidden="true">*</span></label><input id="sell_price" name="sell_price" type="number" step="0.01" min="0" required value="{{ form.get('sell_price', '') }}"></div>
+      <div class="field"><label for="reorder_level">Low stock alert level</label><input id="reorder_level" name="reorder_level" type="number" min="0" value="{{ form.get('reorder_level', 2) }}" aria-describedby="reorder-hint">
+        <div class="hint" id="reorder-hint">The manager is alerted when stock falls to this number or below (also called the reorder level).</div></div>
+    </div>
+    {% if not product %}
+    <div class="form-row">
+      <div class="field"><label for="opening_stock">Opening stock</label><input id="opening_stock" name="opening_stock" type="number" min="0" value="{{ form.get('opening_stock', 0) }}" aria-describedby="opening-hint">
+        <div class="hint" id="opening-hint">Saved as the first entry in the stock history.</div></div>
+    </div>
+    {% else %}
+    <p class="minor">Stock cannot be typed in here. Use Receive stock, New sale, Record waste or Stock count, so every change is recorded in the stock history.</p>
+    {% endif %}
+    <div class="form-actions"><button class="btn btn-primary" type="submit">Save product</button>
+      <a class="btn btn-outline" href="{{ url_for('main.product_detail', product_id=product.product_id) if product else url_for('main.products') }}">Cancel</a></div>
+  </form>
+</section>
+{% endblock %}

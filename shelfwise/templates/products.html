@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "_macros.html" import heading, condition, stock_status %}
+{% block title %}Products{% endblock %}
+{% block heading %}
+{% call heading('Products', 'Browse products, prices and stock levels.') %}
+  {% if g.user.role == 'manager' %}<a class="btn btn-primary" href="{{ url_for('main.product_new') }}"><span aria-hidden="true">＋&nbsp;</span>Add product</a>{% endif %}
+{% endcall %}
+{% endblock %}
+{% block content %}
+<section class="card filter-card" aria-label="Filter products">
+  <form method="get" class="filter-grid">
+    <div class="field"><label for="q">Search products</label><input id="q" name="q" type="search" value="{{ q }}" placeholder="Name, brand or SKU"></div>
+    <div class="field"><label for="category">Category</label>
+      <select id="category" name="category"><option value="">All categories</option>
+        {% for c in categories %}<option value="{{ c.category_id }}" {{ 'selected' if category == c.category_id|string }}>{{ c.category_name }}</option>{% endfor %}
+      </select></div>
+    <div class="field"><label for="condition">Condition</label>
+      <select id="condition" name="condition"><option value="">All conditions</option>
+        {% for c in conditions %}<option {{ 'selected' if condition == c }}>{{ c }}</option>{% endfor %}
+      </select></div>
+    <div class="field"><label for="show">Show</label>
+      <select id="show" name="show">
+        {% for v, t in [('active','On sale'),('low','Low stock only'),('inactive','Hidden'),('all','All')] %}
+          <option value="{{ v }}" {{ 'selected' if show == v }}>{{ t }}</option>{% endfor %}
+      </select></div>
+    <div class="field"><button class="btn btn-primary btn-block" type="submit">Search</button></div>
+  </form>
+</section>
+<section class="card" aria-labelledby="list-title">
+  <div class="section-heading"><h2 id="list-title">Product list <span class="count-text">{{ products|length }} product{{ '' if products|length == 1 else 's' }}</span></h2>
+    {% if g.user.role == 'manager' %}<a class="text-link" href="{{ url_for('main.product_new') }}">Add product →</a>{% endif %}</div>
+  <div class="table-scroll"><table>
+    <thead><tr><th scope="col">SKU</th><th scope="col">Product</th><th scope="col">Category</th><th scope="col">Condition</th><th scope="col" class="num">Sell price</th><th scope="col" class="num">Stock</th><th scope="col">Status</th></tr></thead>
+    <tbody>
+    {% for p in products %}
+    <tr>
+      <td class="code">{{ p.sku }}</td>
+      <td><a href="{{ url_for('main.product_detail', product_id=p.product_id) }}">{{ p.product_name }}</a><div class="minor">{{ p.brand or '' }}</div></td>
+      <td>{{ p.category_name }}</td>
+      <td>{{ condition(p.item_condition) }}</td>
+      <td class="num">{{ p.sell_price|money }}</td>
+      <td class="num">{{ p.quantity }}</td>
+      <td>{{ stock_status(p) }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7" class="empty">No products match your search.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% endblock %}

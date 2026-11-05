@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% from "_macros.html" import heading, condition %}
+{% block title %}Dashboard{% endblock %}
+{% block heading %}
+{% call heading('Dashboard', 'Stock, sales and waste at a glance.') %}
+  <a class="btn btn-primary" href="{{ url_for('main.sale_new') }}"><span aria-hidden="true">＋&nbsp;</span>New sale</a>
+  <a class="btn btn-outline" href="{{ url_for('main.receive') }}">Receive stock</a>
+{% endcall %}
+{% endblock %}
+{% block content %}
+{% if g.user.role == 'manager' and low_count %}
+<div class="alert-banner" role="alert">
+  <strong>Low stock alert:</strong> {{ low_count }} product{{ '' if low_count == 1 else 's' }} {{ 'is' if low_count == 1 else 'are' }} at or below the alert level.
+  <a href="{{ url_for('main.alerts') }}">See what to order →</a>
+</div>
+{% endif %}
+<section class="welcome" aria-label="Welcome">
+  <div><strong>Welcome back, {{ g.user.full_name.split()[0] }}</strong><p>Here is a quick view of your shop's stock and sales.</p></div>
+  <span>{% if last_sale %}Sales recorded up to {{ last_sale|short_date }}{% else %}No sales recorded yet{% endif %}</span>
+</section>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="stat-label">Sales · last 7 days</div><div class="stat-number">{{ kpi.sales_week|money }}</div><span class="stat-foot">From recorded sales</span></div>
+  <div class="stat-card"><div class="stat-label">Profit · last 7 days</div><div class="stat-number">{{ kpi.profit_week|money }}</div><span class="stat-foot">Sales less product cost</span></div>
+  <div class="stat-card"><div class="stat-label">Products running low</div><div class="stat-number{{ ' amber-text' if low_count }}">{{ low_count }}</div><span class="stat-foot">At or below reorder level</span></div>
+  <div class="stat-card"><div class="stat-label">Current stock value</div><div class="stat-number">{{ kpi.stock_value|money }}</div><span class="stat-foot">{{ kpi.products }} products · at cost price</span></div>
+</div>
+
+<div class="two-columns wide-left">
+  <section class="card" aria-labelledby="chart-title">
+    <div class="section-heading"><h2 id="chart-title">Daily sales</h2><span class="minor">Last 14 days</span></div>
+    <div class="chart-area" aria-hidden="true">
+      <div class="chart-plot">
+        {% for d in days %}
+        <div class="chart-col"><div class="chart-bar" style="height:{{ '%.1f'|format(100 * d.revenue / chart_max) }}%" title="{{ d.day|short_date }}: {{ d.revenue|money }}"></div><small>{{ d.day[8:10] }}/{{ d.day[5:7] }}</small></div>
+        {% endfor %}
+      </div>
+    </div>
+    <details class="data-table">
+      <summary>Show the chart as a table</summary>
+      <table>
+        <caption class="visually-hidden">Sales for each of the last 14 days</caption>
+        <thead><tr><th scope="col">Day</th><th scope="col" class="num">Sales</th></tr></thead>
+        <tbody>{% for d in days %}<tr><td>{{ d.day|short_date }}</td><td class="num">{{ d.revenue|money }}</td></tr>{% endfor %}</tbody>
+      </table>
+    </details>
+  </section>
+  <section class="card" aria-labelledby="condition-title">
+    <div class="section-heading"><h2 id="condition-title">Sales by condition</h2><span class="minor">Last 30 days</span></div>
+    {% set top_rev = by_condition[0].revenue if by_condition else 1 %}
+    {% for r in by_condition %}
+    <div class="condition-row"><span>{{ condition(r.label) }}</span>
+      <div class="progress" aria-hidden="true"><span style="width:{{ '%.1f'|format(100 * r.revenue / (top_rev or 1)) }}%"></span></div>
+      <strong>{{ r.revenue|money }}</strong></div>
+    {% else %}<p class="empty">No sales yet.</p>{% endfor %}
+    <div class="light-box"><strong>{{ kpi.second_life|int }}</strong> refurbished or used items sold in 30 days – electronics given a second life (SDG 12.5).
+      {{ slow_count }} product(s) have not sold for 30 days.{% if g.user.role == 'manager' %} <a href="{{ url_for('main.reports', view='slow') }}">See the slow-moving report</a>.{% endif %}</div>
+  </section>
+</div>
+
+<div class="two-columns">
+  <section class="card" aria-labelledby="low-title">
+    <div class="section-heading"><h2 id="low-title">Low stock</h2><a class="text-link" href="{{ url_for('main.products', show='low') }}">View all low stock →</a></div>
+    <div class="table-scroll"><table>
+      <thead><tr><th scope="col">Product</th><th scope="col" class="num">In stock</th><th scope="col" class="num">Days left</th><th scope="col" class="num">Suggested order</th></tr></thead>
+      <tbody>
+      {% for p in low %}
+        <tr><td><a href="{{ url_for('main.product_detail', product_id=p.product_id) }}">{{ p.product_name }}</a><div class="minor">{{ p.sku }}</div></td>
+            <td class="num"><span class="badge {{ 'badge-red' if p.quantity == 0 else 'badge-amber' }}">{{ p.quantity }}</span></td>
+            <td class="num">{{ p.days_left if p.days_left is not none else '–' }}</td>
+            <td class="num">{{ p.suggested_order }}</td></tr>
+      {% else %}
+        <tr><td colspan="4" class="empty">All products are above their reorder level.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+  <section class="card" aria-labelledby="best-title">
+    <div class="section-heading"><h2 id="best-title">Best sellers</h2><span class="minor">Last 7 days</span></div>
+    <div class="table-scroll"><table>
+      <thead><tr><th scope="col">Product</th><th scope="col">Condition</th><th scope="col" class="num">Units</th><th scope="col" class="num">Total</th></tr></thead>
+      <tbody>
+      {% for t in top %}
+        <tr><td>{{ t.product_name }}</td><td>{{ condition(t.item_condition) }}</td><td class="num">{{ t.units|int }}</td><td class="num">{{ t.revenue|money }}</td></tr>
+      {% else %}
+        <tr><td colspan="4" class="empty">No sales this week.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+</div>
+{% endblock %}

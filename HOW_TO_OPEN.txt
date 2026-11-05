@@ -1,0 +1,53 @@
+HOW TO OPEN SHELFWISE  -  Know your shelves.
+=============================================
+
+Do NOT double-click the .html files in shelfwise/templates.
+They only work when ShelfWise is running.
+
+WINDOWS WITH XAMPP (MySQL)
+1. Install Python from https://www.python.org/downloads/
+   Tick "Add Python to PATH" during installation.
+2. Open XAMPP Control Panel and press Start next to MySQL.
+3. Unzip the ShelfWise folder (right-click > Extract All).
+4. Double-click START_SHELFWISE_Windows.bat
+5. Your browser opens http://127.0.0.1:5000
+
+The first run creates the "shelfwise" database with made-up demo data.
+
+MYSQL HAS A PASSWORD?
+The black window will ask:  "MySQL password:"  Type it and press Enter.
+(The typing is hidden - that is normal.) It is saved in config.py, so you
+only do this once. Type  sqlite  instead to use the built-in database.
+
+IT SAYS "already has tables that do not match ShelfWise"?
+You have an older 'shelfwise' database from before. Choose:
+    YES   = delete the old tables and create the new ShelfWise tables
+    NEW   = keep your old database and use a new one called shelfwise_app
+    Enter = stop and change nothing
+
+"INTERNAL SERVER ERROR" OR "Something went wrong" IN THE BROWSER?
+Close the black window and double-click the start file again.
+ShelfWise checks the database every time it starts and will offer to fix it.
+
+NO MYSQL AT ALL?
+Open config.py and change   DB_ENGINE = "mysql"   to   DB_ENGINE = "sqlite"
+
+SIGN IN
+    Manager: manager@shelfwise.test / Manager123!
+    Staff:   staff@shelfwise.test   / Staff123!
+
+FORGOT PASSWORD?
+Click "Forgot password?" on the sign-in page and type your email.
+A 6-digit code appears in the BLACK WINDOW. Type it on the next page with
+your new password. The code works once, for 15 minutes, with 5 tries.
+
+STILL CANNOT SIGN IN?
+Windows: double-click RESET_PASSWORD_Windows.bat
+Mac:     open Terminal in this folder and type:  python3 reset_password.py
+It lists every account. Type the number, then a new password (typing is hidden).
+It also switches the account back on if it was switched off.
+
+Keep the black window open while you use the app. Close it to stop.
+
+RESET THE DEMO DATA:  double-click RESET_DEMO_DATA_Windows.bat  (or: python seed.py)
+RUN THE TESTS:        python -m unittest -v

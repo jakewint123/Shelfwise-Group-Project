@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "_macros.html" import heading %}
+{% block title %}Suppliers{% endblock %}
+{% block heading %}{{ heading('Suppliers', 'Keep the supplier contact details in one place.') }}{% endblock %}
+{% block content %}
+<div class="two-columns wide-left">
+  <section class="card" aria-labelledby="list-title">
+    <h2 id="list-title">Supplier list</h2>
+    <div class="table-scroll"><table>
+      <thead><tr><th scope="col">ID</th><th scope="col">Supplier</th><th scope="col">Telephone</th><th scope="col">Email</th><th scope="col" class="num">Units supplied</th></tr></thead>
+      <tbody>
+      {% for s in suppliers %}
+        <tr><td class="code">#{{ s.supplier_id }}</td><td><strong>{{ s.supplier_name }}</strong></td><td>{{ s.phone or '' }}</td><td>{{ s.email or '' }}</td><td class="num">{{ s.units_supplied|int }}</td></tr>
+      {% else %}<tr><td colspan="5" class="empty">No suppliers yet.</td></tr>{% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+  <section class="card" aria-labelledby="add-title">
+    <h2 id="add-title">Add supplier</h2>
+    <form method="post" class="form-grid">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field"><label for="supplier_name">Supplier name <span class="required" aria-hidden="true">*</span></label><input id="supplier_name" name="supplier_name" maxlength="120" required></div>
+      <div class="field"><label for="phone">Telephone</label><input id="phone" name="phone" type="tel" maxlength="30" autocomplete="tel"></div>
+      <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" maxlength="150" autocomplete="email"></div>
+      <div><button class="btn btn-primary" type="submit">Save supplier</button></div>
+    </form>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% from "_macros.html" import heading, condition %}
+{% block title %}Reports{% endblock %}
+{% block heading %}
+{% call heading('Reports', 'View sales, stock levels and waste records.') %}
+  <a class="btn btn-outline" href="{{ url_for('main.report_csv', view=view, start=start, end=end, group=group) }}">Download CSV<span class="visually-hidden"> for the {{ reports[view] }} report</span></a>
+{% endcall %}
+{% endblock %}
+{% block content %}
+<div class="stat-grid three-stats">
+  <div class="stat-card"><div class="stat-label">Recorded sales</div><div class="stat-number">{{ summary.sales }}</div><span class="stat-foot">All sales</span></div>
+  <div class="stat-card"><div class="stat-label">Total sales value</div><div class="stat-number">{{ summary.revenue|money }}</div><span class="stat-foot">{% if summary.first_sale %}Since {{ summary.first_sale|short_date }}{% else %}No sales yet{% endif %}</span></div>
+  <div class="stat-card"><div class="stat-label">Waste value</div><div class="stat-number amber-text">{{ summary.waste_cost|money }}</div><span class="stat-foot">{{ summary.waste_records }} waste record{{ '' if summary.waste_records == 1 else 's' }} at cost price</span></div>
+</div>
+
+<nav class="tabs" aria-label="Choose a report">
+  {% for key, title in reports.items() %}
+    <a href="{{ url_for('main.reports', view=key, start=start, end=end) }}"{% if view == key %} aria-current="page"{% endif %}>{{ title }}</a>
+  {% endfor %}
+</nav>
+
+{% if view in ['sales', 'waste'] %}
+<section class="card filter-card" aria-label="Report period">
+  <form method="get" class="filter-grid">
+    <input type="hidden" name="view" value="{{ view }}">
+    <div class="field"><label for="start">From</label><input id="start" name="start" type="date" value="{{ start }}"></div>
+    <div class="field"><label for="end">To</label><input id="end" name="end" type="date" value="{{ end }}"></div>
+    <div class="field"><label for="group">Group by</label>
+      <select id="group" name="group">
+        {% set options = ['product', 'category', 'condition'] if view == 'sales' else ['reason', 'product', 'condition'] %}
+        {% for o in options %}<option value="{{ o }}" {{ 'selected' if group == o }}>{{ o|capitalize }}</option>{% endfor %}
+      </select></div>
+    <div class="field"><button class="btn btn-primary btn-block" type="submit">Update</button></div>
+  </form>
+</section>
+{% endif %}
+
+<section class="card" id="report" aria-labelledby="report-title">
+{% if view == 'low' %}
+  <h2 id="report-title">Low stock with smart reorder</h2>
+  <div class="table-scroll"><table>
+    <thead><tr><th scope="col">Product</th><th scope="col">Condition</th><th scope="col" class="num">In stock</th><th scope="col" class="num">Reorder level</th><th scope="col" class="num">Sold (30 days)</th><th scope="col" class="num">Days left</th><th scope="col" class="num">Suggested order</th></tr></thead>
+    <tbody>
+    {% for p in rows %}
+      <tr><td><a href="{{ url_for('main.product_detail', product_id=p.product_id) }}">{{ p.product_name }}</a><div class="minor">{{ p.sku }}</div></td>
+          <td>{{ condition(p.item_condition) }}</td>
+          <td class="num"><span class="badge {{ 'badge-red' if p.quantity == 0 else 'badge-amber' }}">{{ p.quantity }}</span></td>
+          <td class="num">{{ p.reorder_level }}</td><td class="num">{{ p.sold_30|int }}</td>
+          <td class="num">{{ p.days_left if p.days_left is not none else '–' }}</td>
+          <td class="num"><strong>{{ p.suggested_order }}</strong></td></tr>
+    {% else %}<tr><td colspan="7" class="empty">No products are low on stock.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+  <p class="minor">Smart reorder uses the last 30 days of sales. Suggested order = enough for {{ cover_days }} days (at least twice the reorder level) minus what is in stock.</p>
+
+{% elif view == 'slow' %}
+  <h2 id="report-title">Slow-moving: in stock but not sold for {{ slow_days }} days</h2>
+  <div class="table-scroll"><table>
+    <thead><tr><th scope="col">Product</th><th scope="col">Condition</th><th scope="col" class="num">In stock</th><th scope="col" class="num">Money tied up</th><th scope="col">Last sale</th></tr></thead>
+    <tbody>
+    {% for p in rows %}
+      <tr><td><a href="{{ url_for('main.product_detail', product_id=p.product_id) }}">{{ p.product_name }}</a></td>
+          <td>{{ condition(p.item_condition) }}</td>
+          <td class="num">{{ p.quantity }}</td><td class="num">{{ (p.quantity * p.cost_price)|money }}</td>
+          <td>{{ (p.last_sale|short_date) if p.last_sale else 'Never' }}</td></tr>
+    {% else %}<tr><td colspan="5" class="empty">Everything in stock has sold recently.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+  <p class="minor">Ideas: put these on offer, bundle them with a laptop, or order fewer next time. Old technology loses value quickly.</p>
+
+{% elif view == 'sales' %}
+  <h2 id="report-title">Sales and profit by {{ group }}, {{ start|short_date }} to {{ end|short_date }}</h2>
+  <div class="table-scroll"><table>
+    <thead><tr><th scope="col">{{ group|capitalize }}</th><th scope="col" class="num">Sales</th><th scope="col" class="num">Units</th><th scope="col" class="num">Revenue</th><th scope="col" class="num">Profit</th><th scope="col" class="num">Margin</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr><td>{{ condition(r.label) if group == 'condition' else r.label }}</td><td class="num">{{ r.sales }}</td><td class="num">{{ r.units|int }}</td><td class="num">{{ r.revenue|money }}</td>
+          <td class="num">{{ r.profit|money }}</td><td class="num">{{ ((100 * r.profit / r.revenue) if r.revenue else 0)|round(1) }}%</td></tr>
+    {% else %}<tr><td colspan="6" class="empty">No sales in this period.</td></tr>{% endfor %}
+    </tbody>
+    {% if rows %}<tfoot><tr><th scope="row">Total</th><td></td><td class="num">{{ totals.units|int }}</td><td class="num">{{ totals.revenue|money }}</td><td class="num">{{ totals.profit|money }}</td>
+      <td class="num">{{ ((100 * totals.profit / totals.revenue) if totals.revenue else 0)|round(1) }}%</td></tr></tfoot>{% endif %}
+  </table></div>
+
+{% elif view == 'waste' %}
+  <h2 id="report-title">Waste by {{ group }}, {{ start|short_date }} to {{ end|short_date }}</h2>
+  <div class="table-scroll"><table>
+    <thead><tr><th scope="col">{{ group|capitalize }}</th><th scope="col" class="num">Records</th><th scope="col" class="num">Units</th><th scope="col" class="num">Cost</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr><td>{{ condition(r.label) if group == 'condition' else r.label }}</td><td class="num">{{ r.records }}</td><td class="num">{{ r.units|int }}</td><td class="num">{{ r.cost|money }}</td></tr>
+    {% else %}<tr><td colspan="4" class="empty">No waste in this period.</td></tr>{% endfor %}
+    </tbody>
+    {% if rows %}<tfoot><tr><th scope="row">Total</th><td></td><td class="num">{{ totals.units|int }}</td><td class="num">{{ totals.cost|money }}</td></tr></tfoot>{% endif %}
+  </table></div>
+
+{% elif view == 'condition' %}
+  <h2 id="report-title">Stock by condition (on sale now)</h2>
+  <div class="table-scroll"><table>
+    <thead><tr><th scope="col">Condition</th><th scope="col" class="num">Products</th><th scope="col" class="num">Units</th><th scope="col" class="num">Value at cost</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr><td>{{ condition(r.label) }}</td><td class="num">{{ r.products }}</td><td class="num">{{ r.units|int }}</td><td class="num">{{ r.value|money }}</td></tr>
+    {% endfor %}
+    </tbody>
+    {% if rows %}<tfoot><tr><th scope="row">Total</th><td></td><td class="num">{{ totals.units|int }}</td><td class="num">{{ totals.value|money }}</td></tr></tfoot>{% endif %}
+  </table></div>
+  <p class="minor">Refurbished and used stock keeps working electronics in use for longer (SDG 12.5: reduce waste through reuse).</p>
+{% endif %}
+</section>
+{% endblock %}

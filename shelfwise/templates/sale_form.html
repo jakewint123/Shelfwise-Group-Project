@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% from "_macros.html" import heading %}
+{% block title %}New sale{% endblock %}
+{% block heading %}{{ heading('New sale', 'Record one product per sale with cash or card payment.') }}{% endblock %}
+{% block content %}
+<div class="two-columns wide-left">
+  <section class="card">
+    <h2>Sale details</h2>
+    <form method="post" class="form-grid" id="sale-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field"><label for="product_id">Product <span class="required" aria-hidden="true">*</span></label>
+        <select id="product_id" name="product_id" required><option value="">Select a product</option>
+          {% for p in products %}<option value="{{ p.product_id }}" data-price="{{ p.sell_price }}" data-stock="{{ p.quantity }}" {{ 'selected' if form.get('product_id') == p.product_id|string }}>{{ p.sku }} · {{ p.product_name }} · {{ p.item_condition }} · {{ p.sell_price|money }} ({{ p.quantity }} left)</option>{% endfor %}
+        </select></div>
+      <div class="form-row">
+        <div class="field"><label for="quantity">Quantity <span class="required" aria-hidden="true">*</span></label><input id="quantity" name="quantity" type="number" min="1" value="{{ form.get('quantity', 1) }}" required></div>
+        <div class="field"><label for="payment_method">Payment method <span class="required" aria-hidden="true">*</span></label>
+          <select id="payment_method" name="payment_method">
+            {% for m in methods %}<option {{ 'selected' if form.get('payment_method') == m }}>{{ m }}</option>{% endfor %}
+          </select></div>
+      </div>
+      <div class="calculation">Sale total <strong id="total" aria-live="polite">£0.00</strong></div>
+      <div id="stock-warning" class="message warning" role="alert" hidden></div>
+      <div class="form-actions"><button class="btn btn-primary" type="submit">Save sale</button>
+        <a class="btn btn-outline" href="{{ url_for('main.dashboard') }}">Cancel</a></div>
+    </form>
+  </section>
+  <section class="card" aria-labelledby="recent-title">
+    <h2 id="recent-title">Recent sales</h2>
+    <div class="table-scroll"><table>
+      <thead><tr><th scope="col">Sale</th><th scope="col">Product</th><th scope="col" class="num">Qty</th><th scope="col" class="num">Total</th></tr></thead>
+      <tbody>
+      {% for s in recent %}
+        <tr><td class="code">#{{ s.sale_id }}</td><td>{{ s.product_name }}<div class="minor">{{ s.sale_date|short_date }} · {{ s.payment_method }}</div></td>
+            <td class="num">{{ s.quantity }}</td><td class="num">{{ s.total|money }}</td></tr>
+      {% else %}<tr><td colspan="4" class="empty">No sales yet.</td></tr>{% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+</div>
+<script>
+  // Show the total before saving: price x quantity
+  const product = document.getElementById('product_id');
+  const qty = document.getElementById('quantity');
+  const warning = document.getElementById('stock-warning');
+  function showTotal() {
+    const option = product.selectedOptions[0];
+    const price = option && option.dataset.price ? parseFloat(option.dataset.price) : 0;
+    const wanted = parseInt(qty.value, 10) || 0;
+    document.getElementById('total').textContent =
+      '£' + (price * wanted).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // Warn straight away if there is not enough stock (the server still checks too)
+    const inStock = option && option.dataset.stock ? parseInt(option.dataset.stock, 10) : null;
+    if (inStock !== null && wanted > inStock) {
+      warning.textContent = 'Only ' + inStock + ' in stock.';
+      warning.hidden = false;
+    } else {
+      warning.hidden = true;
+    }
+  }
+  product.addEventListener('change', showTotal);
+  qty.addEventListener('input', showTotal);
+  showTotal();
+</script>
+{% endblock %}

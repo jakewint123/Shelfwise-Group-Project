@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% from "_macros.html" import messages with context %}
+{% block title %}Sign in{% endblock %}
+{% block public %}
+<h1>Welcome back</h1>
+<p class="subtitle">Inventory, sales and waste records in one place.</p>
+{{ messages() }}
+<form method="post" class="form-grid">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="field"><label for="email">Email address</label>
+    <input id="email" name="email" type="email" required autofocus autocomplete="username" placeholder="you@example.com"></div>
+  <div class="field"><label for="password">Password</label>
+    <input id="password" name="password" type="password" required autocomplete="current-password"></div>
+  <button class="btn btn-primary btn-block" type="submit">Sign in</button>
+</form>
+<p class="below-form"><a href="{{ url_for('auth.forgot') }}">Forgot password?</a></p>
+<div class="demo-box"><strong>Demo accounts (made-up data)</strong><br>
+  Manager: manager@shelfwise.test / Manager123!<br>Staff: staff@shelfwise.test / Staff123!</div>
+{% endblock %}

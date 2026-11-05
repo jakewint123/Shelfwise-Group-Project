@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_macros.html" import messages with context %}
+{% block title %}Reset password{% endblock %}
+{% block public %}
+<h1>Choose a new password</h1>
+<p class="subtitle">Type the code from the black ShelfWise window and your new password.</p>
+{{ messages() }}
+<form method="post" class="form-grid">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="field"><label for="email">Email address</label>
+    <input id="email" name="email" type="email" required value="{{ email }}" autocomplete="username"></div>
+  <div class="field"><label for="code">6-digit reset code</label>
+    <input id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autocomplete="one-time-code" aria-describedby="code-hint">
+    <div class="hint" id="code-hint">It works once, for 15 minutes.</div></div>
+  <div class="field"><label for="password">New password</label>
+    <input id="password" name="password" type="password" required minlength="8" autocomplete="new-password" aria-describedby="password-hint">
+    <div class="hint" id="password-hint">At least 8 characters with letters and numbers.</div></div>
+  <div class="field"><label for="confirm">Type the new password again</label>
+    <input id="confirm" name="confirm" type="password" required minlength="8" autocomplete="new-password"></div>
+  <button class="btn btn-primary btn-block" type="submit">Change password</button>
+</form>
+<p class="below-form"><a href="{{ url_for('auth.forgot') }}">Ask for a new code</a> · <a href="{{ url_for('auth.login') }}">Back to sign in</a></p>
+{% endblock %}

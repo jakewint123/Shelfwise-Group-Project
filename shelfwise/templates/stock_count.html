@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "_macros.html" import heading %}
+{% block title %}Stock count{% endblock %}
+{% block heading %}{{ heading('Stock count: ' ~ product.product_name, 'Use this after counting the shelf. The difference is saved as a stock count movement.', 'Stock count') }}{% endblock %}
+{% block content %}
+<section class="card form-card">
+  <p>The system says <strong>{{ product.quantity }}</strong> in stock.</p>
+  <form method="post" class="form-grid">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-row">
+      <div class="field"><label for="counted">How many did you count? <span class="required" aria-hidden="true">*</span></label><input id="counted" name="counted" type="number" min="0" required></div>
+      <div class="field"><label for="reason">Reason <span class="required" aria-hidden="true">*</span></label><input id="reason" name="reason" required placeholder="e.g. Monthly shelf count"></div>
+    </div>
+    <div class="form-actions"><button class="btn btn-primary" type="submit">Save count</button>
+      <a class="btn btn-outline" href="{{ url_for('main.product_detail', product_id=product.product_id) }}">Cancel</a></div>
+  </form>
+</section>
+{% endblock %}

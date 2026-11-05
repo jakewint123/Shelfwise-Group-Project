@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% from "_macros.html" import heading %}
+{% block title %}Error {{ code }}{% endblock %}
+{% block heading %}{{ heading('Error ' ~ code, crumb='Error') }}{% endblock %}
+{% block content %}
+<section class="card"><p>{{ message }}</p>
+  <a class="btn btn-outline" href="{{ url_for('main.dashboard') }}">Back to the dashboard</a></section>
+{% endblock %}
+{% block public %}
+<h1>Error {{ code }}</h1>
+<p>{{ message }}</p>
+<a class="btn btn-primary btn-block" href="{{ url_for('auth.login') }}">Go to sign in</a>
+{% endblock %}

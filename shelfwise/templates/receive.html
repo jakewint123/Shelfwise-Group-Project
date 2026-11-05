@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% from "_macros.html" import heading %}
+{% block title %}Receive stock{% endblock %}
+{% block heading %}{{ heading('Receive stock', 'Record new stock deliveries from suppliers.') }}{% endblock %}
+{% block content %}
+<div class="two-columns wide-left">
+  <section class="card">
+    <h2>Receive delivery</h2>
+    <form method="post" class="form-grid">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field"><label for="product_id">Product <span class="required" aria-hidden="true">*</span></label>
+        <select id="product_id" name="product_id" required><option value="">Select a product</option>
+          {% for p in products %}<option value="{{ p.product_id }}" {{ 'selected' if selected == p.product_id|string }}>{{ p.sku }} · {{ p.product_name }} · {{ p.item_condition }} ({{ p.quantity }} left)</option>{% endfor %}
+        </select></div>
+      <div class="form-row">
+        <div class="field"><label for="supplier_id">Supplier</label>
+          <select id="supplier_id" name="supplier_id"><option value="">Not known</option>
+            {% for s in suppliers %}<option value="{{ s.supplier_id }}">{{ s.supplier_name }}</option>{% endfor %}
+          </select></div>
+        <div class="field"><label for="quantity">Quantity received <span class="required" aria-hidden="true">*</span></label><input id="quantity" name="quantity" type="number" min="1" value="1" required></div>
+      </div>
+      <div class="field"><label for="note">Delivery note / invoice</label><input id="note" name="note" maxlength="255" placeholder="e.g. Invoice 2609-01"></div>
+      <div class="form-actions"><button class="btn btn-primary" type="submit">Save stock receipt</button>
+        <a class="btn btn-outline" href="{{ url_for('main.dashboard') }}">Cancel</a></div>
+    </form>
+  </section>
+  <aside class="card soft-card" aria-labelledby="help-title">
+    <h2 id="help-title">Receiving stock</h2>
+    <p>Choose the product and enter how many items arrived. The supplier and invoice number can also be recorded.</p>
+    <p>Every delivery is kept in the stock history, so the stock level can always be explained.</p>
+    {% if g.user.role == 'manager' %}<a class="text-link" href="{{ url_for('main.supplier_list') }}">View suppliers →</a>{% endif %}
+  </aside>
+</div>
+{% endblock %}

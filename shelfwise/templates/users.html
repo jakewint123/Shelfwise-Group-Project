@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% from "_macros.html" import heading %}
+{% block title %}Users{% endblock %}
+{% block heading %}{{ heading('Users', 'Manager and staff accounts. Managers can add, edit and switch accounts on or off.') }}{% endblock %}
+{% block content %}
+<div class="two-columns wide-left">
+  <section class="card" aria-labelledby="list-title">
+    <h2 id="list-title">User accounts</h2>
+    <div class="table-scroll"><table>
+      <thead><tr><th scope="col">ID</th><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Role</th><th scope="col">Status</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+      <tbody>
+      {% for u in users %}
+        <tr><td class="code">#{{ u.user_id }}</td><td><strong>{{ u.full_name }}</strong></td><td>{{ u.email }}</td>
+            <td><span class="badge {{ 'badge-blue' if u.role == 'manager' else 'badge-green' }}">{{ u.role|capitalize }}</span></td>
+            <td>{% if u.is_active %}<span class="badge badge-green">Active</span>{% else %}<span class="badge badge-grey">Switched off</span>{% endif %}</td>
+            <td><div class="actions">
+              <a class="btn btn-outline btn-small" href="{{ url_for('main.user_edit', user_id=u.user_id) }}">Edit<span class="visually-hidden"> {{ u.full_name }}</span></a>
+              {% if u.user_id != g.user.user_id %}
+              <form method="post" action="{{ url_for('main.user_toggle', user_id=u.user_id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-outline btn-small" type="submit">{{ 'Switch off' if u.is_active else 'Switch on' }}<span class="visually-hidden"> {{ u.full_name }}</span></button>
+              </form>{% endif %}</div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+  <section class="card" aria-labelledby="add-title">
+    <h2 id="add-title">Add user</h2>
+    <form method="post" class="form-grid">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field"><label for="full_name">Full name <span class="required" aria-hidden="true">*</span></label><input id="full_name" name="full_name" maxlength="100" required autocomplete="off"></div>
+      <div class="field"><label for="email">Email <span class="required" aria-hidden="true">*</span></label><input id="email" name="email" type="email" maxlength="150" required autocomplete="off"></div>
+      <div class="field"><label for="role">Role <span class="required" aria-hidden="true">*</span></label><select id="role" name="role"><option value="staff">Staff</option><option value="manager">Manager</option></select></div>
+      <div class="field"><label for="password">Temporary password <span class="required" aria-hidden="true">*</span></label>
+        <input id="password" name="password" type="password" required minlength="8" autocomplete="new-password" aria-describedby="password-hint">
+        <div class="hint" id="password-hint">At least 8 characters with letters and numbers. Only a secure hash is stored.</div></div>
+      <div><button class="btn btn-primary" type="submit">Save user</button></div>
+    </form>
+  </section>
+</div>
+{% endblock %}

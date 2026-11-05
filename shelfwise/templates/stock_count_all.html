@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "_macros.html" import heading %}
+{% block title %}Stock count{% endblock %}
+{% block heading %}{{ heading('Stock count', 'Compare the number on the shelves with the saved quantity. Only rows you change are saved.') }}{% endblock %}
+{% block content %}
+<section class="card">
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="section-heading"><h2>Check shelf quantities</h2><span class="minor">{{ products|length }} products</span></div>
+    <div class="form-row" style="margin-bottom:18px">
+      <div class="field"><label for="reason">Reason for this count <span class="required" aria-hidden="true">*</span></label>
+        <input id="reason" name="reason" required value="Monthly shelf count"></div>
+    </div>
+    <div class="table-scroll"><table class="count-table">
+      <thead><tr><th scope="col">Product</th><th scope="col">SKU</th><th scope="col" class="num">In database</th><th scope="col">Counted quantity</th></tr></thead>
+      <tbody>
+      {% for p in products %}
+        <tr><td><a href="{{ url_for('main.product_detail', product_id=p.product_id) }}">{{ p.product_name }}</a></td>
+            <td class="code">{{ p.sku }}</td><td class="num">{{ p.quantity }}</td>
+            <td><input type="number" min="0" name="count_{{ p.product_id }}" value="{{ p.quantity }}" data-saved="{{ p.quantity }}" aria-label="Counted quantity for {{ p.product_name }}"></td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    <div class="form-actions"><button class="btn btn-primary" type="submit">Save stock count</button></div>
+  </form>
+</section>
+<script>
+  // Highlight rows where the counted number is different from the database
+  document.querySelectorAll('.count-table input').forEach(function (box) {
+    box.addEventListener('input', function () {
+      box.closest('tr').classList.toggle('changed', box.value !== box.dataset.saved);
+    });
+  });
+</script>
+{% endblock %}

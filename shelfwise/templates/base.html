@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}ShelfWise{% endblock %} | ShelfWise</title>
+  <link rel="icon" href="{{ url_for('static', filename='shelfwise-logo.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+{% from "_macros.html" import messages with context %}
+{% if g.user %}
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="{{ url_for('main.dashboard') }}"><img src="{{ url_for('static', filename='shelfwise-logo.svg') }}" alt="" width="34" height="34"><span>ShelfWise</span></a>
+    <div class="brand-line">Know your shelves.</div>
+    {% set ep = request.endpoint or '' %}
+    {% macro link(endpoint, icon, text, active) -%}
+      <a class="nav-link{{ ' active' if active }}" href="{{ url_for(endpoint) }}"{% if active %} aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">{{ icon }}</span><span>{{ text }}</span></a>
+    {%- endmacro %}
+    <nav aria-label="Main menu">
+      {{ link('main.dashboard', '▦', 'Dashboard', ep == 'main.dashboard') }}
+      <div class="nav-label">Daily tasks</div>
+      {{ link('main.sale_new', '＋', 'New sale', ep == 'main.sale_new') }}
+      {{ link('main.receive', '↓', 'Receive stock', ep == 'main.receive') }}
+      {{ link('main.waste_new', '↗', 'Record waste', ep == 'main.waste_new') }}
+      <div class="nav-label">Inventory</div>
+      {{ link('main.products', '▤', 'Products', ep.startswith('main.product') and ep != 'main.product_count') }}
+      {{ link('main.history', '↺', 'Stock history', ep == 'main.history') }}
+      {% if g.user.role == 'manager' %}
+      <div class="nav-label">Management</div>
+      <a class="nav-link{{ ' active' if ep == 'main.alerts' }}" href="{{ url_for('main.alerts') }}"{% if ep == 'main.alerts' %} aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">!</span><span>Low stock alerts</span>{% if low_alert_count %}<span class="nav-count">{{ low_alert_count }}<span class="visually-hidden"> products low</span></span>{% endif %}</a>
+      {{ link('main.reports', '▥', 'Reports', ep == 'main.reports') }}
+      {{ link('main.stock_count_all', '≡', 'Stock count', ep in ('main.stock_count_all', 'main.product_count')) }}
+      {{ link('main.supplier_list', '◈', 'Suppliers', ep == 'main.supplier_list') }}
+      {{ link('main.users', '♙', 'Users', ep in ('main.users', 'main.user_edit')) }}
+      {% endif %}
+    </nav>
+    <div class="sidebar-bottom">
+      <span class="user-avatar" aria-hidden="true">{{ (g.user.full_name.split()|map('first')|join|upper)[:2] }}</span>
+      <div><strong>{{ g.user.full_name }}</strong><small>{{ g.user.role|capitalize }}</small></div>
+    </div>
+    <form method="post" action="{{ url_for('auth.logout') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="sign-out" type="submit">Sign out</button>
+    </form>
+  </aside>
+  <main class="main" id="main" tabindex="-1">
+    <div class="topbar"><span>Inventory, sales and waste management</span><span>{{ g.user.full_name }} · {{ g.user.role|capitalize }}</span></div>
+    {% block heading %}{% endblock %}
+    {{ messages() }}
+    {% block content %}{% endblock %}
+    <footer class="site-footer"><span>ShelfWise · Know your shelves.</span><span>CPU4106-20C Group 6 (Yellow)</span></footer>
+  </main>
+</div>
+{% else %}
+<body class="login-page">
+<main class="login-panel" id="main">
+  <div class="login-brand"><img src="{{ url_for('static', filename='shelfwise-logo.svg') }}" alt="" width="42" height="42"><span>ShelfWise</span></div>
+  <p class="login-tagline">Know your shelves.</p>
+  {% block public %}{% endblock %}
+</main>
+{% endif %}
+<script>
+  // Show / Hide button for every password box, so people can check what they typed
+  document.querySelectorAll('input[type="password"]').forEach(function (box) {
+    var wrap = document.createElement("div");
+    wrap.className = "password-wrap";
+    box.parentNode.insertBefore(wrap, box);
+    wrap.appendChild(box);
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "show-password";
+    button.textContent = "Show";
+    button.setAttribute("aria-label", "Show password");
+    button.setAttribute("aria-pressed", "false");
+    button.addEventListener("click", function () {
+      var hidden = box.type === "password";
+      box.type = hidden ? "text" : "password";
+      button.textContent = hidden ? "Hide" : "Show";
+      button.setAttribute("aria-label", hidden ? "Hide password" : "Show password");
+      button.setAttribute("aria-pressed", hidden ? "true" : "false");
+      box.focus();
+    });
+    wrap.appendChild(button);
+  });
+</script>
+</body>
+</html>

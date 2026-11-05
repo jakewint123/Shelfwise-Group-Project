@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% from "_macros.html" import heading, condition, movement %}
+{% block title %}{{ product.product_name }}{% endblock %}
+{% block heading %}
+{% call heading('Product details', 'Product information and stock movement records.') %}
+  <a class="btn btn-primary" href="{{ url_for('main.receive', product_id=product.product_id) }}">Receive stock</a>
+  <a class="btn btn-outline" href="{{ url_for('main.waste_new', product_id=product.product_id) }}">Record waste</a>
+{% endcall %}
+{% endblock %}
+{% block content %}
+<section class="card" aria-labelledby="detail-name">
+  <div class="section-heading">
+    <div><div class="eyebrow">{{ product.sku }}</div><h2 id="detail-name">{{ product.product_name }}</h2><p class="minor">{{ product.brand or '' }}</p></div>
+    <div class="actions">
+      {% if g.user.role == 'manager' %}
+      <a class="btn btn-outline btn-small" href="{{ url_for('main.product_edit', product_id=product.product_id) }}">Edit</a>
+      <a class="btn btn-outline btn-small" href="{{ url_for('main.product_count', product_id=product.product_id) }}">Stock count</a>
+      <form method="post" action="{{ url_for('main.product_toggle', product_id=product.product_id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-small {{ 'btn-danger' if product.is_active else 'btn-outline' }}" type="submit">{{ 'Hide from sale' if product.is_active else 'Put back on sale' }}</button>
+      </form>
+      {% endif %}
+      <a class="btn btn-outline btn-small" href="{{ url_for('main.products') }}">← Products</a>
+    </div>
+  </div>
+  <div class="detail-grid">
+    <div><span class="minor">Condition</span><div class="detail-value">{{ condition(product.item_condition) }}</div></div>
+    <div><span class="minor">Category</span><div class="detail-value">{{ product.category_name }}</div></div>
+    <div><span class="minor">Sell price</span><div class="detail-value">{{ product.sell_price|money }}</div></div>
+    <div><span class="minor">Cost price</span><div class="detail-value">{{ product.cost_price|money }}</div></div>
+    <div><span class="minor">Quantity in stock</span><div class="detail-value{{ ' red-text' if product.quantity == 0 else (' amber-text' if product.quantity <= product.reorder_level) }}">{{ product.quantity }}{% if product.quantity <= product.reorder_level %} <span class="badge {{ 'badge-red' if product.quantity == 0 else 'badge-amber' }}">{{ 'Out of stock' if product.quantity == 0 else 'Low stock' }}</span>{% endif %}</div></div>
+    <div><span class="minor">Low stock alert level</span><div class="detail-value">{{ product.reorder_level }}</div></div>
+    <div><span class="minor">Warranty</span><div class="detail-value">{{ product.warranty_months }} months</div></div>
+    <div><span class="minor">Product status</span><div class="detail-value">{{ 'Active' if product.is_active else 'Hidden from sale' }}</div></div>
+  </div>
+</section>
+
+<div class="two-columns">
+  <section class="smart-box" aria-label="Smart reorder">
+    <strong>Smart reorder:</strong> sold {{ sold_30|int }} in the last 30 days (about {{ smart.per_day }} a day).
+    {% if smart.days_left is not none %}Current stock should last about <strong>{{ smart.days_left }} days</strong>.{% else %}No recent sales, so no reorder is needed now.{% endif %}
+    {% if smart.suggested_order %} Suggested order: <strong>{{ smart.suggested_order }}</strong> (enough for 4 weeks).{% endif %}
+  </section>
+  <section class="smart-box" aria-label="Audit check">
+    <strong>Audit check:</strong>
+    {% if check.ok %}<span class="badge badge-green">✓ Stock matches history</span>{% else %}<span class="badge badge-red">✗ Does not match</span>{% endif %}
+    <span class="minor">Stock {{ check.stored }} = total of all movements {{ check.total }}</span>
+  </section>
+</div>
+
+<section class="card" aria-labelledby="moves-title">
+  <div class="section-heading"><h2 id="moves-title">Recent stock movements</h2><a class="text-link" href="{{ url_for('main.history', q=product.sku) }}">Full stock history →</a></div>
+  <div class="table-scroll"><table>
+    <thead><tr><th scope="col">Date</th><th scope="col">Type</th><th scope="col" class="num">Change</th><th scope="col" class="num">Balance</th><th scope="col">Note</th><th scope="col">Supplier</th><th scope="col">By</th></tr></thead>
+    <tbody>
+    {% for m in history %}
+      <tr><td>{{ m.movement_date|short_date }}</td><td>{{ movement(m.movement_type) }}</td>
+          <td class="num">{{ '%+d'|format(m.quantity_change) }}</td><td class="num">{{ m.balance_after }}</td>
+          <td>{{ m.note or '' }}</td><td>{{ m.supplier_name or '' }}</td><td>{{ m.full_name }}</td></tr>
+    {% else %}<tr><td colspan="7" class="empty">No stock changes yet.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% endblock %}

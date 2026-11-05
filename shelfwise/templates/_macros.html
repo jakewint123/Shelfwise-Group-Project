@@ -1,0 +1,35 @@
+{# Small building blocks used by every page, so the pages stay short. #}
+
+{% macro heading(title, subtitle='', crumb='') -%}
+<header class="page-heading">
+  <div>
+    <div class="breadcrumb">ShelfWise / {{ crumb or title }}</div>
+    <h1>{{ title }}</h1>
+    {% if subtitle %}<p class="subtitle">{{ subtitle }}</p>{% endif %}
+  </div>
+  <div class="heading-actions">{% if caller %}{{ caller() }}{% endif %}</div>
+</header>
+{%- endmacro %}
+
+{% macro condition(name) -%}
+<span class="badge {{ {'New': 'badge-blue', 'Refurbished': 'badge-green', 'Used': 'badge-amber'}.get(name, 'badge-grey') }}">{{ name }}</span>
+{%- endmacro %}
+
+{% macro movement(kind) -%}
+<span class="badge {{ {'IN': 'badge-green', 'SALE': 'badge-blue', 'WRITE_OFF': 'badge-red', 'ADJUST': 'badge-amber'}.get(kind, 'badge-grey') }}">{{ {'IN': 'Stock in', 'SALE': 'Sale', 'WRITE_OFF': 'Waste', 'ADJUST': 'Count'}.get(kind, kind) }}</span>
+{%- endmacro %}
+
+{% macro stock_status(p) -%}
+{% if not p.is_active %}<span class="badge badge-grey">Hidden</span>
+{% elif p.quantity == 0 %}<span class="badge badge-red">Out of stock</span>
+{% elif p.quantity <= p.reorder_level %}<span class="badge badge-amber">Low stock</span>
+{% else %}<span class="badge badge-green">In stock</span>{% endif %}
+{%- endmacro %}
+
+{% macro csrf() -%}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{%- endmacro %}
+
+{% macro messages() -%}
+{% for cat, msg in get_flashed_messages(with_categories=true) %}
+  <div class="message {{ cat }}" role="{{ 'alert' if cat in ('error', 'warning') else 'status' }}">{{ msg }}</div>
+{% endfor %}
+{%- endmacro %}

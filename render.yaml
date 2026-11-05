@@ -1,0 +1,18 @@
+# Render Blueprint: Render reads this file and sets up ShelfWise for you.
+# Dashboard -> New -> Blueprint -> choose this GitHub repository.
+services:
+  - type: web
+    name: shelfwise
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app --workers 1 --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: SHELFWISE_DB_ENGINE
+        value: sqlite
+      - key: SHELFWISE_SECRET_KEY
+        generateValue: true
+      - key: SHELFWISE_NO_BROWSER
+        value: "1"

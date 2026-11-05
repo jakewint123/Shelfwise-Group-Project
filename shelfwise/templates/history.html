@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "_macros.html" import heading, movement %}
+{% block title %}Stock history{% endblock %}
+{% block heading %}{{ heading('Stock history', 'Every delivery, sale, waste record and stock count, newest first. This is the audit trail.') }}{% endblock %}
+{% block content %}
+<section class="card filter-card" aria-label="Filter stock movements">
+  <form method="get" class="filter-grid">
+    <div class="field"><label for="q">Search product</label><input id="q" name="q" type="search" value="{{ q }}" placeholder="Product name or SKU"></div>
+    <div class="field"><label for="type">Movement type</label>
+      <select id="type" name="type"><option value="">All movements</option>
+        {% for k, t in [('IN','Stock in'),('SALE','Sale'),('WRITE_OFF','Waste'),('ADJUST','Stock count')] %}<option value="{{ k }}" {{ 'selected' if kind == k }}>{{ t }}</option>{% endfor %}
+      </select></div>
+    <div class="field"><button class="btn btn-primary btn-block" type="submit">Search</button></div>
+  </form>
+</section>
+<section class="card" aria-labelledby="moves-title">
+  <div class="section-heading"><h2 id="moves-title">Recent movements</h2><span class="minor">Showing {{ rows|length }} record{{ '' if rows|length == 1 else 's' }} (up to 200)</span></div>
+  <div class="table-scroll"><table>
+    <thead><tr><th scope="col">ID</th><th scope="col">Date</th><th scope="col">Product</th><th scope="col">Type</th><th scope="col" class="num">Change</th><th scope="col" class="num">Balance</th><th scope="col">Note</th><th scope="col">By</th></tr></thead>
+    <tbody>
+    {% for m in rows %}
+      <tr><td class="code">#{{ m.movement_id }}</td><td>{{ m.movement_date|short_date }}</td>
+          <td><a href="{{ url_for('main.product_detail', product_id=m.product_id) }}">{{ m.product_name }}</a><div class="minor">{{ m.sku }}</div></td>
+          <td>{{ movement(m.movement_type) }}</td>
+          <td class="num">{{ '%+d'|format(m.quantity_change) }}</td><td class="num">{{ m.balance_after }}</td>
+          <td>{{ m.note or '' }}</td><td>{{ m.full_name }}</td></tr>
+    {% else %}<tr><td colspan="8" class="empty">Nothing found.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% endblock %}

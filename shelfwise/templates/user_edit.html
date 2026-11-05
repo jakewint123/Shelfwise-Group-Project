@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "_macros.html" import heading %}
+{% block title %}Edit user{% endblock %}
+{% block heading %}{{ heading('Edit user: ' ~ user.full_name, 'Change the name, email or role. Leave the password empty to keep the current one.', 'Users') }}{% endblock %}
+{% block content %}
+<section class="card form-card">
+  <form method="post" class="form-grid">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-row">
+      <div class="field"><label for="full_name">Full name <span class="required" aria-hidden="true">*</span></label><input id="full_name" name="full_name" required value="{{ form.get('full_name', '') }}"></div>
+      <div class="field"><label for="email">Email <span class="required" aria-hidden="true">*</span></label><input id="email" name="email" type="email" required value="{{ form.get('email', '') }}" aria-describedby="email-hint">
+        <div class="hint" id="email-hint">This is the email used to sign in.</div></div>
+    </div>
+    <div class="form-row">
+      <div class="field"><label for="role">Role</label>
+        <select id="role" name="role" {{ 'disabled' if user.user_id == g.user.user_id }} aria-describedby="role-hint">
+          {% for r in ['staff', 'manager'] %}<option value="{{ r }}" {{ 'selected' if form.get('role') == r }}>{{ r|capitalize }}</option>{% endfor %}
+        </select>
+        {% if user.user_id == g.user.user_id %}<input type="hidden" name="role" value="manager">
+          <div class="hint" id="role-hint">You cannot remove your own manager role.</div>{% endif %}</div>
+      <div class="field"><label for="password">New password</label>
+        <input id="password" name="password" type="password" minlength="8" autocomplete="new-password" aria-describedby="new-password-hint">
+        <div class="hint" id="new-password-hint">Optional. At least 8 characters with letters and numbers.</div></div>
+    </div>
+    <div class="form-actions"><button class="btn btn-primary" type="submit">Save changes</button>
+      <a class="btn btn-outline" href="{{ url_for('main.users') }}">Cancel</a></div>
+  </form>
+</section>
+{% endblock %}
